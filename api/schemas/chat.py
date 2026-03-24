@@ -1,7 +1,9 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
+import uuid
 
 class ChatRequest(BaseModel):
+    conversation_id: Optional[uuid.UUID] = None
     question: str = Field(
         ..., 
         example="Thuốc Paracetamol uống liều lượng như thế nào cho người lớn?"
@@ -18,6 +20,7 @@ class DocumentMetadata(BaseModel):
 
 class ChatResponse(BaseModel):
     """Model trả về cho client sau khi AI xử lý xong"""
+    conversation_id: uuid.UUID
     answer: str = Field(..., description="Câu trả lời tổng hợp của AI")
     sources: List[DocumentMetadata] = Field(
         default_factory=list, 

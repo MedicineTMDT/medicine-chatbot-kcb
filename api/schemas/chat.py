@@ -1,5 +1,11 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List
+
+class ChatRequest(BaseModel):
+    question: str = Field(
+        ..., 
+        example="Thuốc Paracetamol uống liều lượng như thế nào cho người lớn?"
+    )
 
 class DocumentMetadata(BaseModel):
     """Thông tin trích xuất của đoạn văn bản (Chunk) trong Pinecone"""

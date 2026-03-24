@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from api.routers import chat
+from api.routers import chat, conversations
 
 app = FastAPI(
     title="RAG API System",
@@ -7,7 +7,8 @@ app = FastAPI(
     version="1.0.0"
 )
 
-app.include_router(chat.router, prefix="/api/v1", tags=["Chat"])
+app.include_router(chat.router)
+app.include_router(conversations.router)
 
 @app.get("/")
 def health_check():

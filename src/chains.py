@@ -4,8 +4,8 @@ from langchain_core.runnables import RunnablePassthrough
 from src.llms.openai_llm import get_llm
 from src.prompts import build_rag_prompt
 from src.utils import format_docs
-from vector_db import get_vector_store
-from api.schemas.response import ChatResponse
+from db import get_vector_store
+from api.schemas.chat import ChatResponse
 
 def get_rag_chain():
 

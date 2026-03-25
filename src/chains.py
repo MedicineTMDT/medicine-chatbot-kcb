@@ -6,7 +6,9 @@ from src.prompts import build_rag_prompt
 from src.utils import format_docs, format_history_to_string
 from db import get_vector_store
 from api.schemas.chat import ChatResponse
+from functools import lru_cache
 
+@lru_cache(maxsize=1)
 def get_rag_chain():
     llm = get_llm(temperature=0.1)
     

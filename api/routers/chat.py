@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 import uuid
 from api.schemas import ChatRequest, ChatResponse
 from src.chains import get_rag_chain 
 from db import get_db, crud
+
 
 router = APIRouter(
     prefix="/chat",
@@ -12,7 +13,7 @@ router = APIRouter(
 
 
 @router.post("/", response_model=ChatResponse)
-async def ask_question(request: ChatRequest, db: Session = Depends(get_db)):
+async def ask_question(request: ChatRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     rag_chain = get_rag_chain()
 
     try:
@@ -38,8 +39,8 @@ async def ask_question(request: ChatRequest, db: Session = Depends(get_db)):
         
         answer = result["answer"] if isinstance(result, dict) and "answer" in result else str(result)
         
-        crud.save_message(db=db, conversation_id=conversation_id, role="user", content=request.question)
-        crud.save_message(db=db, conversation_id=conversation_id, role="assistant", content=answer)
+        background_tasks.add_task(crud.save_message, db=db, conversation_id=conversation_id, role="user", content=request.question)
+        background_tasks.add_task(crud.save_message, db=db, conversation_id=conversation_id, role="assistant", content=answer)
 
         return ChatResponse(
             conversation_id=conversation_id,

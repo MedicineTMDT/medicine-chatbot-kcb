@@ -1,13 +1,22 @@
 def format_docs(docs):
-    return "\n\n".join(doc.page_content for doc in docs)
+    formatted_docs = []
+    for i, doc in enumerate(docs):
+        formatted_docs.append(f'<doc id="{i+1}">\n{doc.page_content}\n</doc>')
+    
+    return "\n\n".join(formatted_docs)
 
-def format_history_to_string(history_tuples):
+def format_history_to_string(history_tuples, max_chars_per_msg=500):
     if not history_tuples:
-        return "Không có lịch sử trò chuyện."
+        return "Không có lịch sử trò chuyện trước đó."
     
     formatted_lines = []
     for role, msg in history_tuples:
-        prefix = "User" if role == "human" else "AI"
-        formatted_lines.append(f"{prefix}: {msg}")
+        if len(msg) > max_chars_per_msg:
+            msg = msg[:max_chars_per_msg] + "... [đã cắt bớt]"
+            
+        if role == "human":
+            formatted_lines.append(f"<user>{msg}</user>")
+        else:
+            formatted_lines.append(f"<assistant>{msg}</assistant>")
     
     return "\n".join(formatted_lines)

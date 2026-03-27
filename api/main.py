@@ -1,5 +1,9 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from api.routers import chat, conversations
+
 
 app = FastAPI(
     title="RAG API System",

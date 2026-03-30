@@ -9,10 +9,10 @@ class ConversationCreate(BaseModel):
 
 class ConversationResponse(BaseModel):
     id: uuid.UUID
-    user_id: Optional[str]
+    user_id: Optional[str] = None
     title: str
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -23,6 +23,7 @@ class MessageResponse(BaseModel):
     role: str
     content: str
     created_at: datetime
+    sources: Optional[list] = None
 
     class Config:
         from_attributes = True

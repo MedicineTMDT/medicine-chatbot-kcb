@@ -29,6 +29,7 @@ class Message(Base):
     role = Column(String(50), nullable=False) # 'user' or 'assistant'
     content = Column(Text, nullable=False)
     sources = Column(JSON, nullable=True)
+    tool_calls = Column(JSON, nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

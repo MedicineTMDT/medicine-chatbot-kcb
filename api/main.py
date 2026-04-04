@@ -1,15 +1,20 @@
-from dotenv import load_dotenv
-load_dotenv()
-
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routers import chat, conversations
+from db.postgre.db_store import init_db
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize database tables on startup
+    init_db()
+    yield
 
 app = FastAPI(
     title="RAG API System",
     description="API cho hệ thống hỏi đáp RAG",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 app.add_middleware(

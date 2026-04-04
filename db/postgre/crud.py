@@ -14,13 +14,14 @@ def create_conversation(db: Session, user_id: str = None, title: str = "New Conv
     db.refresh(db_conversation)
     return db_conversation
 
-def save_message(db: Session, conversation_id: uuid.UUID, role: str, content: str, sources: list = None) -> models.Message:
+def save_message(db: Session, conversation_id: uuid.UUID, role: str, content: str, sources: list = None, tool_calls: list = None) -> models.Message:
     db_message = models.Message(
         id=uuid.uuid4(),
         conversation_id=conversation_id,
         role=role,
         content=content,
-        sources=sources
+        sources=sources,
+        tool_calls=tool_calls
     )
     db.add(db_message)
     

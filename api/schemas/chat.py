@@ -4,6 +4,7 @@ import uuid
 
 class ChatRequest(BaseModel):
     conversation_id: Optional[uuid.UUID] = None
+    user_id: Optional[str] = None
     question: str = Field(
         ..., 
         example="Thuốc Paracetamol uống liều lượng như thế nào cho người lớn?"
@@ -17,7 +18,7 @@ class DocumentMetadata(BaseModel):
 
 class ChatResponse(BaseModel):
     """Model trả về cho client theo từng chunk trong luồng SSE"""
-    type: str = Field(..., description="Trạng thái stream: 'start', 'stream', 'end', hoặc 'error'")
+    type: str = Field(..., description="Trạng thái stream: 'start', 'tool_start', 'stream', 'end', hoặc 'error'")
     conversation_id: Optional[uuid.UUID] = None
     answer: Optional[str] = Field(default=None, description="Từng chữ (token) được AI sinh ra, hoặc thông báo lỗi")
     sources: Optional[List[DocumentMetadata]] = Field(default=None, description="Danh sách tài liệu tham khảo (Chỉ gửi kèm ở chunk type='end')")

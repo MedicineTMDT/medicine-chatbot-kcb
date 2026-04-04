@@ -14,18 +14,21 @@ def create_conversation(db: Session, user_id: str = None, title: str = "New Conv
     db.refresh(db_conversation)
     return db_conversation
 
-def save_message(db: Session, conversation_id: uuid.UUID, role: str, content: str) -> models.Message:
+def save_message(db: Session, conversation_id: uuid.UUID, role: str, content: str, sources: list = None, tool_calls: list = None) -> models.Message:
     db_message = models.Message(
         id=uuid.uuid4(),
         conversation_id=conversation_id,
         role=role,
-        content=content
+        content=content,
+        sources=sources,
+        tool_calls=tool_calls
     )
     db.add(db_message)
     
     conversation = db.query(models.Conversation).filter(models.Conversation.id == conversation_id).first()
     if conversation:
-        conversation.updated_at = db_message.created_at
+        from sqlalchemy import func
+        conversation.updated_at = func.now()
 
     db.commit()
     db.refresh(db_message)

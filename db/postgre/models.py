@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, func
+from sqlalchemy import Column, String, Text, DateTime, ForeignKey, func, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base, relationship
 
@@ -28,7 +28,9 @@ class Message(Base):
     )
     role = Column(String(50), nullable=False) # 'user' or 'assistant'
     content = Column(Text, nullable=False)
+    sources = Column(JSON, nullable=True)
+    tool_calls = Column(JSON, nullable=True)
     
-    created_at = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     conversation = relationship("Conversation", back_populates="messages")

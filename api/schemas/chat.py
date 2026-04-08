@@ -15,6 +15,7 @@ class DocumentMetadata(BaseModel):
     filename: str = Field(..., description="Tên file PDF gốc (VD: Phac_do_SXH_2023.pdf)")
     page_number: int = Field(..., description="Trang số mấy trong file PDF")
     page_content: str = Field(..., description="Đoạn văn bản gốc được AI dùng làm căn cứ")
+    source_link: str = Field(..., description="Link tới phác đồ kèm trang")
 
 class ChatResponse(BaseModel):
     """Model trả về cho client theo từng chunk trong luồng SSE"""

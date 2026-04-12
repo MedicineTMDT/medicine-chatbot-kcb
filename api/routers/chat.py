@@ -1,4 +1,5 @@
 import json
+import os
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -15,6 +16,8 @@ router = APIRouter(
     prefix="/chat",
     tags=["Chat"]
 )
+
+BASE_URL_FILE = os.getenv("BASE_URL_FILE")
 
 @router.post("/")
 async def ask_question_stream(request: ChatRequest, db: Session = Depends(get_db)):
@@ -122,7 +125,9 @@ async def ask_question_stream(request: ChatRequest, db: Session = Depends(get_db
 
                 # 4. Cleanup & Save
                 sources_list = [
-                    DocumentMetadata(page_content=doc.page_content, **doc.metadata) for doc in retrieved_docs
+                    DocumentMetadata(page_content=doc.page_content,
+                                     source_link=BASE_URL_FILE + doc.metadata["filename"] + "#page=" + str(int(doc.metadata["page_number"])),
+                                     **doc.metadata) for doc in retrieved_docs
                 ]
                 
                 crud.save_message(

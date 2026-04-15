@@ -14,6 +14,12 @@ def create_conversation(db: Session, user_id: str = None, title: str = "New Conv
     db.refresh(db_conversation)
     return db_conversation
 
+def check_conversation(db: Session, conversation_id: uuid.UUID) -> bool:
+    conversation = db.query(models.Conversation)\
+                     .filter(models.Conversation.id == conversation_id)\
+                     .first()
+    return conversation is not None
+
 def save_message(db: Session, conversation_id: uuid.UUID, role: str, content: str, sources: list = None, tool_calls: list = None) -> models.Message:
     db_message = models.Message(
         id=uuid.uuid4(),

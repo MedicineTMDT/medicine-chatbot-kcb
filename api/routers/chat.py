@@ -1,5 +1,6 @@
 import json
 import os
+import uuid
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -13,24 +14,22 @@ from db import get_db, crud
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, ToolMessage
 
 router = APIRouter(
-    prefix="/chat",
-    tags=["Chat"]
+    prefix="/conversations",
+    tags=["Chat Operation"]
 )
 
 BASE_URL_FILE = os.getenv("BASE_URL_FILE")
 
-@router.post("/")
-async def ask_question_stream(request: ChatRequest, db: Session = Depends(get_db)):
+@router.post("/{conversation_id}/messages")
+async def ask_question_stream(conversation_id: uuid.UUID, request: ChatRequest, db: Session = Depends(get_db)):
+    if not crud.check_conversation(db=db, conversation_id=conversation_id):
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
     rag_chain = get_rag_chain()
     condense_chain = get_condense_chain()
     llm = get_llm(temperature=0.0)
 
     try:
-        conversation_id = request.conversation_id
-        if not conversation_id:
-            new_conv = crud.create_conversation(db=db, user_id=request.user_id, title="New Conversation")
-            conversation_id = new_conv.id
-
         raw_history = crud.get_chat_history(db=db, conversation_id=conversation_id, limit=6)
         chat_history = [("human" if msg.role == "user" else "ai", msg.content) for msg in raw_history]
 

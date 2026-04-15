@@ -3,7 +3,6 @@ from typing import List, Optional
 import uuid
 
 class ChatRequest(BaseModel):
-    conversation_id: Optional[uuid.UUID] = None
     user_id: Optional[str] = None
     question: str = Field(
         ..., 

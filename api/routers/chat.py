@@ -1,9 +1,9 @@
 import json
 import os
 import uuid
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends 
 from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from api.schemas import ChatRequest, ChatResponse, DocumentMetadata
 from src.chains import get_rag_chain, get_condense_chain 
 from src.tools import get_medicine_tools_definition, AVAILABLE_TOOLS
@@ -11,7 +11,7 @@ from src.prompts import build_tool_agent_prompt
 from src.llms import get_llm
 from src.utils import format_history_to_string
 from db import get_db, crud
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, ToolMessage
+from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 
 router = APIRouter(
     prefix="/conversations",
@@ -21,16 +21,16 @@ router = APIRouter(
 BASE_URL_FILE = os.getenv("BASE_URL_FILE")
 
 @router.post("/{conversation_id}/messages")
-async def ask_question_stream(conversation_id: uuid.UUID, request: ChatRequest, db: Session = Depends(get_db)):
+async def ask_question_stream(conversation_id: uuid.UUID, request: ChatRequest, db: AsyncSession = Depends(get_db)):
     rag_chain = get_rag_chain()
     condense_chain = get_condense_chain()
     llm = get_llm(temperature=0.0)
 
     try:
-        raw_history = crud.get_chat_history(db=db, conversation_id=conversation_id, limit=6)
+        raw_history = await crud.get_chat_history(db=db, conversation_id=conversation_id, limit=6)
         chat_history = [("human" if msg.role == "user" else "ai", msg.content) for msg in raw_history]
 
-        crud.save_message(db=db, conversation_id=conversation_id, role="user", content=request.question)
+        await crud.save_message(db=db, conversation_id=conversation_id, role="user", content=request.question)
 
         async def event_generator():
             full_answer = ""
@@ -126,7 +126,7 @@ async def ask_question_stream(conversation_id: uuid.UUID, request: ChatRequest, 
                                      **doc.metadata) for doc in retrieved_docs
                 ]
                 
-                crud.save_message(
+                await crud.save_message(
                     db=db, 
                     conversation_id=conversation_id, 
                     role="assistant", 

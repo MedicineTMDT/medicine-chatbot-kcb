@@ -1,8 +1,5 @@
 import os
-from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
-
-load_dotenv()
 
 def get_llm(temperature: float = 0.0, model_name: str = "gpt-4o") -> ChatOpenAI:
     api_key = os.getenv("OPENAI_API_KEY")

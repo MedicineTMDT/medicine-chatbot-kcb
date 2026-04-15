@@ -1,12 +1,10 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from .models import Base
 import os
 
 POSTGRES_DATABASE_URL = os.getenv("POSTGRES_DATABASE_URL")
 
-from .models import Base
-
-engine = create_engine(
+engine = create_async_engine(
     POSTGRES_DATABASE_URL,
     pool_size=5,
     max_overflow=0,
@@ -14,14 +12,21 @@ engine = create_engine(
     pool_recycle=1800,
 )
 
-def init_db():
-    Base.metadata.create_all(bind=engine)
+async def init_db():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine, 
+    class_=AsyncSession,
+    autocommit=False, 
+    autoflush=False,
+    expire_on_commit=False
+)
 
-def get_db():
-    db = SessionLocal()
+async def get_db():
+    db = AsyncSessionLocal()
     try:
         yield db
     finally:
-        db.close()
+        await db.close() 

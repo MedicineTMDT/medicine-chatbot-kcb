@@ -1,6 +1,6 @@
 import uuid
 from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from api.schemas import TitleRequest
 from src.llms import get_llm
 from db import get_db, crud
@@ -15,7 +15,7 @@ router = APIRouter(
 async def generate_title_endpoint(
     conversation_id: uuid.UUID, 
     request: TitleRequest, 
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     llm = get_llm(temperature=0.1, model_name="gpt-4o-mini")
 
@@ -26,11 +26,7 @@ async def generate_title_endpoint(
         response = llm.invoke(prompt_text)
         new_title = response.content.strip()
 
-        updated_conv = crud.update_conversation_title(
-            db=db, 
-            conversation_id=conversation_id, 
-            title=new_title
-        )
+        _ = await crud.update_conversation_title(db=db, conversation_id=conversation_id, title=new_title)
 
         return new_title
 

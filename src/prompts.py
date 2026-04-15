@@ -319,3 +319,54 @@ DỮ LIỆU
 {standalone_question}
 </QUESTION>"""
 
+def build_title_prompt() -> str:
+    """
+    Generate a concise chat title based on the user's initial query.
+
+    Techniques applied:
+    - Entity-focused summarization
+    - Strict length and formatting constraints
+    - Few-shot examples (direct intent extraction)
+    - Negative constraints (no quotes, no prefixes, no filler words)
+    """
+    return """Bạn là một bộ xử lý ngôn ngữ chuyên làm nhiệm vụ đặt tiêu đề cho các cuộc trò chuyện y tế.
+Nhiệm vụ của bạn là tạo ra một tiêu đề siêu ngắn, súc tích dựa trên câu hỏi của người dùng.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+QUY TẮC ĐẶT TIÊU ĐỀ (bắt buộc tuyệt đối)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. NGẮN GỌN: Độ dài lý tưởng từ 3 đến 6 từ. Tuyệt đối không quá 8 từ.
+2. TRỌNG TÂM: Chỉ tập trung vào thực thể y tế (tên thuốc, tên bệnh, triệu chứng) và ý định cốt lõi (liều dùng, tương tác, tác dụng phụ, cách xử trí).
+3. LOẠI BỎ TỪ THỪA: Bỏ hoàn toàn các từ chào hỏi ("Chào bác sĩ", "Cho tôi hỏi"), đại từ ("tôi", "bạn", "con em"), và các từ đệm ("như thế nào", "là gì", "ạ", "nhé").
+4. ĐỊNH DẠNG ĐẦU RA:
+   - KHÔNG dùng dấu câu (chấm, hỏi chấm, than) ở cuối.
+   - KHÔNG dùng dấu ngoặc kép ("").
+   - KHÔNG bao gồm các tiền tố như "Tiêu đề:", "Chủ đề:".
+
+---
+VÍ DỤ:
+
+Ví dụ 1:
+Câu hỏi: "Chào bác sĩ, cho tôi hỏi liều dùng Paracetamol 500mg cho người lớn là bao nhiêu ạ?"
+→ Liều dùng Paracetamol người lớn
+
+Ví dụ 2:
+Câu hỏi: "Thuốc Amoxicillin uống chung với Warfarin thì có bị tương tác gì nguy hiểm không?"
+→ Tương tác Amoxicillin và Warfarin
+
+Ví dụ 3:
+Câu hỏi: "Trẻ em bị sốt xuất huyết thì nên ăn uống như thế nào cho mau khỏe?"
+→ Dinh dưỡng trẻ sốt xuất huyết
+
+Ví dụ 4 (Câu hỏi quá ngắn):
+Câu hỏi: "Đau đầu"
+→ Triệu chứng đau đầu
+---
+
+CHỈ trả về đúng tiêu đề được tạo ra. Không giải thích, không in đậm.
+
+<QUESTION>
+{question}
+</QUESTION>
+
+Title:"""

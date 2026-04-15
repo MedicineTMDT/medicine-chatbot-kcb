@@ -22,9 +22,6 @@ BASE_URL_FILE = os.getenv("BASE_URL_FILE")
 
 @router.post("/{conversation_id}/messages")
 async def ask_question_stream(conversation_id: uuid.UUID, request: ChatRequest, db: Session = Depends(get_db)):
-    if not crud.check_conversation(db=db, conversation_id=conversation_id):
-        raise HTTPException(status_code=404, detail="Conversation not found")
-
     rag_chain = get_rag_chain()
     condense_chain = get_condense_chain()
     llm = get_llm(temperature=0.0)

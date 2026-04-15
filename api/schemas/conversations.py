@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 import uuid
@@ -17,6 +17,9 @@ class ConversationResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class ConversationUpdate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=150)
+
 class MessageResponse(BaseModel):
     id: uuid.UUID
     conversation_id: uuid.UUID
@@ -27,3 +30,4 @@ class MessageResponse(BaseModel):
 
     class Config:
         from_attributes = True
+

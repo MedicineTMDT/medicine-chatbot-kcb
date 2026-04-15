@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 import uuid
 from db import get_db, crud
-from api.schemas import ConversationResponse, ConversationCreate, MessageResponse
+from api.schemas import ConversationResponse, ConversationCreate, ConversationUpdate, MessageResponse
 
 router = APIRouter(
     prefix="/conversations",
@@ -47,3 +47,12 @@ def delete_conversation(conversation_id: uuid.UUID, db: Session = Depends(get_db
         raise HTTPException(status_code=404, detail="Conversation not found!")
         
     return {"status": "success", "message": f"Delete conversation {conversation_id} successfully"}
+
+@router.patch("/{conversation_id}", response_model=None)
+def update_conversation_manual(conversation_id: uuid.UUID, request: ConversationUpdate, db: Session = Depends(get_db)):
+    updated_conv = crud.update_conversation_title(db=db, conversation_id=conversation_id, title=request.title.strip())
+    
+    if not updated_conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    return {"status": "success", "conversation_id": updated_conv.id, "title": updated_conv.title}

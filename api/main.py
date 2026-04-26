@@ -4,7 +4,7 @@ load_dotenv()
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routers import chat, conversations, title
+from api.routes import chat, conversations, title
 from db.postgre.db_store import init_db
 
 @asynccontextmanager

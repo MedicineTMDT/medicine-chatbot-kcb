@@ -1,3 +1,5 @@
+from api.schemas import ChatResponse
+
 def format_docs(docs):
     formatted_docs = []
     for i, doc in enumerate(docs):
@@ -20,3 +22,7 @@ def format_history_to_string(history_tuples, max_chars_per_msg=500):
             formatted_lines.append(f"<assistant>{msg}</assistant>")
     
     return "\n".join(formatted_lines)
+
+def format_sse(response_type: str, **kwargs) -> str:
+    chunk = ChatResponse(type=response_type, **kwargs)
+    return f"data: {chunk.model_dump_json()}\n\n"

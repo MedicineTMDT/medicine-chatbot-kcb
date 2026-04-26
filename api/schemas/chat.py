@@ -6,7 +6,7 @@ class ChatRequest(BaseModel):
     user_id: Optional[str] = None
     question: str = Field(
         ..., 
-        examples="Thuốc Paracetamol uống liều lượng như thế nào cho người lớn?"
+        examples=["Thuốc Paracetamol uống liều lượng như thế nào cho người lớn?"]
     )
 
 class DocumentMetadata(BaseModel):

@@ -41,6 +41,7 @@ class ChatStreamHandler:
         ai_msg = await llm_with_tools.ainvoke(messages)
 
         while ai_msg.tool_calls:
+            self.tool_was_called = True
             messages.append(ai_msg)
             
             for tool_call in ai_msg.tool_calls:

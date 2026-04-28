@@ -17,9 +17,9 @@ async def generate_title_endpoint(
     request: TitleRequest, 
     db: AsyncSession = Depends(get_db)
 ):
-    llm = get_llm(temperature=0.1, model_name="gpt-4o-mini")
-
     try:
+        llm = get_llm(temperature=0.1, is_chat_model=False)
+
         prompt_template = build_title_prompt()
         prompt_text = prompt_template.format(question=request.question)
         

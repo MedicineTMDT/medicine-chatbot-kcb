@@ -1,8 +1,19 @@
 import pytest
 import uuid
-from unittest.mock import AsyncMock, MagicMock # Nhớ import thêm MagicMock
-
+from unittest.mock import AsyncMock, MagicMock
 from src.services import ChatStreamHandler
+
+import pytest_asyncio
+from httpx import AsyncClient, ASGITransport
+from api.main import app 
+
+@pytest_asyncio.fixture
+async def client():
+    async with AsyncClient(
+        transport=ASGITransport(app=app), 
+        base_url="http://test"
+    ) as ac:
+        yield ac
 
 @pytest.fixture
 def mock_db():

@@ -4,7 +4,7 @@ from sqlalchemy import desc, asc, func
 from db.postgre import models
 import uuid
 
-async def create_conversation(db: AsyncSession, user_id: str = None, title: str = "New Conversation") -> models.Conversation:
+async def create_conversation(db: AsyncSession, user_id: str, title: str = "New Conversation") -> models.Conversation:
     db_conversation = models.Conversation(
         id=uuid.uuid4(),
         user_id=user_id,

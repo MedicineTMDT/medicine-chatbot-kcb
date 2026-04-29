@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession  # <--- SỬA Ở ĐÂY
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 import uuid
 from db import get_db, crud

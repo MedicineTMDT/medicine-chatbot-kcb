@@ -795,11 +795,7 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "respx", specifier = ">=0.23.1" },
     { name = "sqlalchemy", specifier = ">=2.0.48" },
-<<<<<<< Updated upstream
     { name = "testcontainers", specifier = ">=4.14.2" },
-=======
-    { name = "unstructured-client", specifier = ">=0.43.2" },
->>>>>>> Stashed changes
     { name = "uvicorn", specifier = ">=0.41.0" },
 ]
 

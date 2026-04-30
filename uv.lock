@@ -774,11 +774,7 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "respx" },
     { name = "sqlalchemy" },
-<<<<<<< Updated upstream
     { name = "testcontainers" },
-=======
-    { name = "unstructured-client" },
->>>>>>> Stashed changes
     { name = "uvicorn" },
 ]
 

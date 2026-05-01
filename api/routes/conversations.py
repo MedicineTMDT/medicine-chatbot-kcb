@@ -10,7 +10,7 @@ router = APIRouter(
     tags=["Conversations"]
 )
 
-@router.post("/", response_model=ConversationResponse)
+@router.post("", response_model=ConversationResponse)
 async def create_new_conversation(conv_data: ConversationCreate, db: AsyncSession = Depends(get_db)):
     """Tạo một phiên trò chuyện mới"""
 
@@ -18,7 +18,7 @@ async def create_new_conversation(conv_data: ConversationCreate, db: AsyncSessio
 
     return new_conv
 
-@router.get("/", response_model=List[ConversationResponse])
+@router.get("", response_model=List[ConversationResponse])
 async def get_all_conversations(user_id: str = None, limit: int = 20, db: AsyncSession = Depends(get_db)):
     """Lấy danh sách các phiên trò chuyện (đổ ra Sidebar)"""
 

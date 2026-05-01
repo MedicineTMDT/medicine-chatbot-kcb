@@ -1,42 +1,25 @@
 import json
-import os
+import os 
 import time
+import concurrent.futures
+from dotenv import load_dotenv
 from unstructured_client import UnstructuredClient
 from unstructured_client.models import operations, shared
 
-def main():
-    UNSTRUCTURED_API_KEY = os.getenv("UNSTRUCTURED_API_KEY")
-    UNSTRUCTURED_API_URL = "https://platform.unstructuredapp.io/api/v1"
+load_dotenv()
 
-    INPUT_DIR = "./files"
-    OUTPUT_FILE = "./output/results.json"
+def process_single_file(input_file, client):
+    base_name = os.path.basename(input_file).replace(".pdf", "")
+    output_file = f"./output/{base_name}_results.json"
 
-    client = UnstructuredClient(
-        api_key_auth=UNSTRUCTURED_API_KEY, server_url=UNSTRUCTURED_API_URL
-    )
+    print(f"\n[Luồng {base_name}] ĐANG BẮT ĐẦU XỬ LÝ FILE: {input_file}")
 
-    print("=" * 80)
-    print("STEP 1: Create Ephemeral Job with Custom Pipeline")
-    print("=" * 80)
-
-    input_files_list = []
-    if os.path.exists(INPUT_DIR):
-        for filename in os.listdir(INPUT_DIR):
-            filepath = os.path.join(INPUT_DIR, filename)
-            if os.path.isfile(filepath):
-                with open(filepath, "rb") as f:
-                    input_files_list.append(
-                        shared.InputFiles(
-                            content=f.read(),
-                            file_name=filename,
-                            content_type="application/pdf",
-                        )
-                    )
-    
-    if not input_files_list:
-        print(f"No files found in {INPUT_DIR}")
+    if not os.path.exists(input_file):
+        print(f"[Luồng {base_name}] ⚠️ Cảnh báo: Không tìm thấy file, bỏ qua...")
         return
-    # -------------------------------------------------
+
+    with open(input_file, "rb") as f:
+        file_content = f.read()
 
     job_config = {
         "job_nodes": [
@@ -46,42 +29,53 @@ def main():
                 "subtype": "unstructured_api",
                 "settings": {
                         "strategy": "hi_res",
+                        "languages": ["vie"],
+                        "is_dynamic": True,
                         "include_page_breaks": False,
                         "infer_table_structure": False,
+                        "exclude_elements": [],
                         "coordinates": True,
                         "extract_image_block_types": [
-                                    "Title", "Text", "UncategorizedText", "NarrativeText",
-                                    "BulletedText", "Paragraph", "Abstract", "Threading",
-                                    "Form", "CompositeElement", "Image", "Picture",
-                                    "FigureCaption", "Figure", "Caption", "List",
-                                    "ListItem", "List-item", "Table", "Formula",
-                                    "CodeSnippet", "FormKeysValues", "Header"
-                        ]
+                                    "Image", "Table", "Title", "Text",
+                                    "UncategorizedText", "NarrativeText",
+                                    "BulletedText", "Paragraph", "Abstract",
+                                    "Threading", "Form", "CompositeElement",
+                                    "Picture", "FigureCaption", "Figure",
+                                    "Caption", "List", "ListItem",
+                                    "List-item", "Formula", "FormKeysValues",
+                                    "Header"
+                        ],
+                        "pdf_infer_table_structure": False,
+                        "xml_keep_tags": False,
+                        "encoding": "utf-8",
+                        "provider": None
             },
             },
             {
                 "name": "Table to HTML",
                 "type": "prompter",
-                "subtype": "anthropic_table2html",
+                "subtype": "twopass_table2html",
                 "settings": {
-                        "model": "claude-opus-4-5-20251101"
+                        "model": ["gpt-5-mini", "claude-sonnet-4-20250514"],
+                        "provider_type": ["openai", "anthropic"]
             },
             },
             {
-                "name": "Enrichment",
+                "name": "Generative OCR",
                 "type": "prompter",
-                "subtype": "anthropic_ocr",
+                "subtype": "openai_ocr",
                 "settings": {
-                        "model": "claude-opus-4-5-20251101"
+                        "model": "gpt-4o",
+                        "provider_type": "openai"
             },
             },
             {
-                "name": "Enrichment",
+                "name": "Image Description",
                 "type": "prompter",
                 "subtype": "openai_image_description",
                 "settings": {
-                        "prompt_interface_overrides": None,
-                        "model": "gpt-4o"
+                        "model": "gpt-4o",
+                        "provider_type": "openai"
             },
             },
             {
@@ -89,46 +83,62 @@ def main():
                 "type": "chunk",
                 "subtype": "chunk_by_title",
                 "settings": {
+                        "combine_text_under_n_chars": None,
                         "include_orig_elements": False,
                         "max_characters": 2048,
-                        "multipage_sections": False,
+                        "multipage_sections": True,
                         "new_after_n_chars": 1500,
                         "overlap": 160,
                         "overlap_all": False,
-                        "contextual_chunking_strategy": None
+                        "contextual_chunking_strategy": "v1",
+                        "contextual_chunking_model": None,
+                        "unstructured_api_url": None,
+                        "unstructured_api_key": None,
+                        "skip_table_chunking": False,
+                        "contextual_chunking_service_name": None,
+                        "contextual_chunking_auth": None
+            },
+            },
+            {
+                "name": "Embedder",
+                "type": "embed",
+                "subtype": "azure_openai",
+                "settings": {
+                        "model_name": "text-embedding-3-large"
             },
             }
         ],
     }
 
-    create_response = client.jobs.create_job(
-        request=operations.CreateJobRequest(
-            body_create_job=shared.BodyCreateJob(
-                request_data=json.dumps(job_config),
-                input_files=input_files_list,
+    print(f"[Luồng {base_name}] STEP 1: Creating Job...")
+    try:
+        create_response = client.jobs.create_job(
+            request=operations.CreateJobRequest(
+                body_create_job=shared.BodyCreateJob(
+                    request_data=json.dumps(job_config),
+                    input_files=[
+                        shared.InputFiles(
+                            content=file_content,
+                            file_name=os.path.basename(input_file),
+                            content_type="application/pdf",
+                        )
+                    ],
+                )
             )
         )
-    )
+    except Exception as e:
+        print(f"[Luồng {base_name}] ❌ Lỗi tạo Job: {e}")
+        return
 
     job_id = create_response.job_information.id
-    file_ids = create_response.job_information.input_file_ids 
+    file_id = create_response.job_information.input_file_ids[0]
 
-    print(f"\n✓ Job created successfully")
-    print(f"  Job ID: {job_id}")
-    print(f"  File IDs: {file_ids}")
-    print(f"  Job Type: {create_response.job_information.job_type}")
-    print(f"  Status: {create_response.job_information.status}")
+    print(f"[Luồng {base_name}] ✓ Job created: ID {job_id}")
 
-    if hasattr(create_response.job_information, "output_node_files"):
-        print(f"\n  Pipeline nodes:")
-        for node_file in create_response.job_information.output_node_files:
-            print(f"    - {node_file.node_type}/{node_file.node_subtype}")
-
-    print("\n" + "=" * 80)
-    print("STEP 2: Monitor Job Progress")
-    print("=" * 80)
-
+    print(f"[Luồng {base_name}] STEP 2: Monitoring Progress...")
     start_time = time.time()
+    job_failed = False
+    
     while True:
         status_response = client.jobs.get_job(
             request=operations.GetJobRequest(job_id=job_id)
@@ -136,46 +146,71 @@ def main():
 
         status = status_response.job_information.status
         elapsed = int(time.time() - start_time)
-        print(f"Status: {status} (elapsed: {elapsed}s)    ", end="\r")
+        
+        print(f"[Luồng {base_name}] Trạng thái: {status} (sau {elapsed}s)")
 
         if status == "COMPLETED":
-            print(f"\n✓ Job completed successfully (took {elapsed}s)")
+            print(f"[Luồng {base_name}] ✓ Hoàn thành phân tích (mất {elapsed}s)")
             break
         elif status in ["FAILED", "CANCELLED"]:
-            print(f"\n✗ Job {status.lower()}")
-            exit(1)
+            print(f"[Luồng {base_name}] ✗ Job thất bại hoặc bị hủy.")
+            job_failed = True
+            break
 
-        time.sleep(5)
+        time.sleep(10)
 
-    print("\n" + "=" * 80)
-    print("STEP 3: Download Results")
+    if job_failed:
+        return
+
+    print(f"[Luồng {base_name}] STEP 3: Downloading Results...")
+    try:
+        download_response = client.jobs.download_job_output(
+            request=operations.DownloadJobOutputRequest(job_id=job_id, file_id=file_id)
+        )
+
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(download_response.any, f, indent=2, ensure_ascii=False)
+
+        print(f"[Luồng {base_name}] ✓ Đã lưu thành công: {output_file}")
+        print(f"[Luồng {base_name}]   Số Elements trích xuất: {len(download_response.any)}")
+    except Exception as e:
+         print(f"[Luồng {base_name}] ❌ Lỗi tải kết quả (404/Timeout): {e}")
+
+def main():
+    UNSTRUCTURED_API_KEY = os.getenv("UNSTRUCTURED_API_KEY", "<your-api-key>")
+    UNSTRUCTURED_API_URL = os.getenv(
+        "UNSTRUCTURED_API_URL", "https://platform.unstructuredapp.io"
+    )
+
+    INPUT_FILES = [
+        "files/1832_QD-BYT.pdf", 
+        "files/3879_QD-BYT.pdf", 
+    ]
+
+    client = UnstructuredClient(
+        api_key_auth=UNSTRUCTURED_API_KEY, server_url=UNSTRUCTURED_API_URL
+    )
+
+    print("=" * 80)
+    print(f"BẮT ĐẦU CHẠY ĐA LUỒNG CHO {len(INPUT_FILES)} FILE")
     print("=" * 80)
 
-    all_results = []
-    
-    for f_id in file_ids:
-        print(f"Downloading results for file ID: {f_id}...")
-        try:
-            download_response = client.jobs.download_job_output(
-                request=operations.DownloadJobOutputRequest(job_id=job_id, file_id=f_id)
-            )
-            all_results.extend(download_response.any)
-        except Exception as e:
-            print(f"Failed to download {f_id}: {e}")
-
-    # Save results
-    os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
-    with open(OUTPUT_FILE, "w") as f:
-        json.dump(all_results, f, indent=2) # Lưu list tổng hợp
-    # ----------------------------------------------------------------
-
-    print(f"✓ All results saved to: {OUTPUT_FILE}")
-    print(f"  Total elements extracted: {len(all_results)}")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = []
+        for i, f in enumerate(INPUT_FILES):
+            future = executor.submit(process_single_file, f, client)
+            futures.append(future)
+            
+            if i < len(INPUT_FILES) - 1:
+                print(f"⏳ Đang chờ 5 giây trước khi gửi API cho file tiếp theo...")
+                time.sleep(5) 
+        
+        concurrent.futures.wait(futures)
 
     print("\n" + "=" * 80)
-    print("COMPLETE")
+    print("✓ TẤT CẢ CÁC FILE ĐÃ ĐƯỢC XỬ LÝ XONG!")
     print("=" * 80)
-
 
 if __name__ == "__main__":
     main()

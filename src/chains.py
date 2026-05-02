@@ -28,7 +28,7 @@ def get_rag_chain():
     llm = get_llm(temperature=0.1)
         
     vector_store = get_vector_store()
-    retriever = vector_store.as_retriever(search_kwargs={"k": 5})
+    retriever = vector_store.as_retriever(search_kwargs={"k": 5, "score_threshold": 0.8})
 
     # Reuse the condense chain
     condense_chain = get_condense_chain()

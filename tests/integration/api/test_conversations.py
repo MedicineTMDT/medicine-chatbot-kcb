@@ -8,7 +8,7 @@ import pytest
 @pytest.mark.asyncio
 async def test_create_new_conversation(client):
     payload = {"user_id": "user_123", "title": "Chat về AI"}
-    response = await client.post("/conversations/", json=payload)
+    response = await client.post("/conversations", json=payload)
 
     assert response.status_code == 200
     data = response.json()
@@ -19,7 +19,7 @@ async def test_create_new_conversation(client):
 @pytest.mark.asyncio
 async def test_create_conversation_missing_required_field(client):
     payload = {"title": "Chat về AI"}
-    response = await client.post("/conversations/", json=payload)
+    response = await client.post("/conversations", json=payload)
 
     assert response.status_code == 422
     assert response.json()["detail"][0]["loc"] == ["body", "user_id"]
@@ -27,7 +27,7 @@ async def test_create_conversation_missing_required_field(client):
 @pytest.mark.asyncio
 async def test_create_conversation_invalid_data_type(client):
     payload = {"user_id": ["user_123"], "title": "Chat về AI"}
-    response = await client.post("/conversations/", json=payload)
+    response = await client.post("/conversations", json=payload)
 
     assert response.status_code == 422
 
@@ -45,7 +45,7 @@ async def test_delete_conversation_not_found(client):
 
 @pytest.mark.asyncio
 async def test_delete_conversation_success(client):
-    setup_res = await client.post("/conversations/", json={"user_id": "user_del", "title": "Sẽ bị xóa"})
+    setup_res = await client.post("/conversations", json={"user_id": "user_del", "title": "Sẽ bị xóa"})
     conv_id = setup_res.json()["id"]
 
     response = await client.delete(f"/conversations/{conv_id}")
@@ -53,7 +53,7 @@ async def test_delete_conversation_success(client):
     assert response.status_code == 200
     assert response.json()["status"] == "success"
     
-    get_res = await client.get("/conversations/?user_id=user_del")
+    get_res = await client.get("/conversations?user_id=user_del")
     assert len(get_res.json()) == 0
 
 @pytest.mark.asyncio
@@ -69,24 +69,24 @@ async def test_delete_conversation_invalid_id_format(client):
 
 @pytest.mark.asyncio
 async def test_get_all_conversations_success(client):
-    await client.post("/conversations/", json={"user_id": "user_get", "title": "Hội thoại 1"})
-    await client.post("/conversations/", json={"user_id": "user_get", "title": "Hội thoại 2"})
+    await client.post("/conversations", json={"user_id": "user_get", "title": "Hội thoại 1"})
+    await client.post("/conversations", json={"user_id": "user_get", "title": "Hội thoại 2"})
 
-    response = await client.get("/conversations/?user_id=user_get&limit=10")
+    response = await client.get("/conversations?user_id=user_get&limit=10")
 
     assert response.status_code == 200
     assert len(response.json()) == 2
 
 @pytest.mark.asyncio
 async def test_get_all_conversations_empty_list(client):
-    response = await client.get("/conversations/?user_id=user_empty&limit=10")
+    response = await client.get("/conversations?user_id=user_empty&limit=10")
 
     assert response.status_code == 200
     assert response.json() == []
 
 @pytest.mark.asyncio
 async def test_get_all_conversations_invalid_query_params(client):
-    response = await client.get("/conversations/?user_id=user_123&limit=abc")
+    response = await client.get("/conversations?user_id=user_123&limit=abc")
 
     assert response.status_code == 422
     assert response.json()["detail"][0]["loc"] == ["query", "limit"]
@@ -98,16 +98,17 @@ async def test_get_all_conversations_invalid_query_params(client):
 @pytest.mark.asyncio
 async def test_integration_get_messages_success(client):
     conv_payload = {"user_id": "test_user", "title": "Test Chat"}
-    conv_res = await client.post("/conversations/", json=conv_payload)
+    conv_res = await client.post("/conversations", json=conv_payload)
     conv_id = conv_res.json()["id"]
 
-    msg_payload = {"role": "user", "content": "Tin nhắn test"}
+    msg_payload = {"question": "Tin nhắn test"}
     await client.post(f"/conversations/{conv_id}/messages", json=msg_payload)
 
-    response = await client.get(f"/{conv_id}/messages")
+    response = await client.get(f"/conversations/{conv_id}/messages")
 
     assert response.status_code == 200
     data = response.json()
+    print(data)
     assert len(data) >= 1
     assert data[0]["conversation_id"] == conv_id
     assert data[0]["content"] == "Tin nhắn test"
@@ -115,10 +116,10 @@ async def test_integration_get_messages_success(client):
 @pytest.mark.asyncio
 async def test_integration_get_messages_empty(client):
     conv_payload = {"user_id": "test_empty_user", "title": "Empty Chat"}
-    conv_res = await client.post("/conversations/", json=conv_payload)
+    conv_res = await client.post("/conversations", json=conv_payload)
     conv_id = conv_res.json()["id"]
 
-    response = await client.get(f"/{conv_id}/messages")
+    response = await client.get(f"/conversations/{conv_id}/messages")
 
     assert response.status_code == 200
     assert response.json() == []
@@ -127,7 +128,7 @@ async def test_integration_get_messages_empty(client):
 async def test_integration_get_messages_invalid_uuid(client):
     invalid_id = "12345-abcde"
     
-    response = await client.get(f"/{invalid_id}/messages")
+    response = await client.get(f"/conversations/{invalid_id}/messages")
 
     assert response.status_code == 422
     assert "detail" in response.json()
@@ -138,7 +139,7 @@ async def test_integration_get_messages_invalid_uuid(client):
 
 @pytest.mark.asyncio
 async def test_update_conversation_success(client):
-    setup_res = await client.post("/conversations/", json={"user_id": "user_upd", "title": "Tên cũ"})
+    setup_res = await client.post("/conversations", json={"user_id": "user_upd", "title": "Tên cũ"})
     conv_id = setup_res.json()["id"]
 
     payload = {"title": "Tên mới đã sửa"} 
@@ -158,7 +159,7 @@ async def test_update_conversation_not_found(client):
 
 @pytest.mark.asyncio
 async def test_update_conversation_empty_title(client):
-    setup_res = await client.post("/conversations/", json={"user_id": "user_upd", "title": "Tên cũ"})
+    setup_res = await client.post("/conversations", json={"user_id": "user_upd", "title": "Tên cũ"})
     conv_id = setup_res.json()["id"]
     
     payload = {"title": ""}

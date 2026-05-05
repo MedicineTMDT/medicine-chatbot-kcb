@@ -13,7 +13,7 @@ async def test_create_new_conversation(mock_create, client):
         "title": "Chat về AI"
     }
     payload = {"user_id": "user_123", "title": "Chat về AI"}
-    response = await client.post("/conversations/", json=payload)
+    response = await client.post("/conversations", json=payload)
 
     assert response.status_code == 200
     data = response.json()
@@ -25,7 +25,7 @@ async def test_create_new_conversation(mock_create, client):
 @pytest.mark.asyncio
 async def test_create_conversation_missing_required_field(client):
     payload = {"title": "Chat về AI"}
-    response = await client.post("/conversations/", json=payload)
+    response = await client.post("/conversations", json=payload)
 
     assert response.status_code == 422
     assert response.json()["detail"][0]["loc"] == ["body", "user_id"]
@@ -33,7 +33,7 @@ async def test_create_conversation_missing_required_field(client):
 @pytest.mark.asyncio
 async def test_create_conversation_invalid_data_type(client):
     payload = {"user_id": ["user_123"], "title": "Chat về AI"}
-    response = await client.post("/conversations/", json=payload)
+    response = await client.post("/conversations", json=payload)
 
     assert response.status_code == 422
 
@@ -73,7 +73,7 @@ async def test_get_all_conversations_success(mock_get_all, client):
         {"id": str(uuid.uuid4()), "user_id": "user_get", "title": "Hội thoại 1"},
         {"id": str(uuid.uuid4()), "user_id": "user_get", "title": "Hội thoại 2"}
     ]
-    response = await client.get("/conversations/?user_id=user_get&limit=10")
+    response = await client.get("/conversations?user_id=user_get&limit=10")
 
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -83,7 +83,7 @@ async def test_get_all_conversations_success(mock_get_all, client):
 @patch("db.postgre.crud.get_conversations_by_user", new_callable=AsyncMock)
 async def test_get_all_conversations_empty_list(mock_get_all, client):
     mock_get_all.return_value = []
-    response = await client.get("/conversations/?user_id=user_empty&limit=10")
+    response = await client.get("/conversations?user_id=user_empty&limit=10")
 
     assert response.status_code == 200
     assert response.json() == []
@@ -91,7 +91,7 @@ async def test_get_all_conversations_empty_list(mock_get_all, client):
 
 @pytest.mark.asyncio
 async def test_get_all_conversations_invalid_query_params(client):
-    response = await client.get("/conversations/?user_id=user_123&limit=abc")
+    response = await client.get("/conversations?user_id=user_123&limit=abc")
 
     assert response.status_code == 422
     assert response.json()["detail"][0]["loc"] == ["query", "limit"]

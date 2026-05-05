@@ -5,7 +5,7 @@ from unittest.mock import patch, MagicMock
 @patch("api.routes.title.get_llm")
 async def test_integration_generate_title_success(mock_get_llm, client):
     create_payload = {"user_id": "test_integration", "title": "Default Title"}
-    create_res = await client.post("/conversations/", json=create_payload)
+    create_res = await client.post("/conversations", json=create_payload)
     conv_id = create_res.json()["id"]
 
     mock_llm_instance = MagicMock()
@@ -20,7 +20,7 @@ async def test_integration_generate_title_success(mock_get_llm, client):
     assert response.status_code == 200
     assert response.json() == "Hội thoại về Machine Learning"
 
-    get_res = await client.get("/conversations/?user_id=test_integration")
+    get_res = await client.get("/conversations?user_id=test_integration")
     conversations = get_res.json()
     updated_conv = next((c for c in conversations if c["id"] == conv_id), None)
     
@@ -31,7 +31,7 @@ async def test_integration_generate_title_success(mock_get_llm, client):
 @patch("api.routes.title.get_llm")
 async def test_integration_generate_title_llm_error_no_db_update(mock_get_llm, client):
     create_payload = {"user_id": "test_integration_err", "title": "Old Title"}
-    create_res = await client.post("/conversations/", json=create_payload)
+    create_res = await client.post("/conversations", json=create_payload)
     conv_id = create_res.json()["id"]
 
     mock_get_llm.side_effect = Exception("OpenAI Error")
@@ -41,7 +41,7 @@ async def test_integration_generate_title_llm_error_no_db_update(mock_get_llm, c
 
     assert response.status_code == 500
 
-    get_res = await client.get("/conversations/?user_id=test_integration_err")
+    get_res = await client.get("/conversations?user_id=test_integration_err")
     conversations = get_res.json()
     unchanged_conv = next((c for c in conversations if c["id"] == conv_id), None)
 

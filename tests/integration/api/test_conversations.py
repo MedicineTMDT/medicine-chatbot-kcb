@@ -1,6 +1,6 @@
 import uuid
 import pytest
-
+from db.postgre.models import Conversation, Message
 # ==========================================
 # TEST CREATE
 # ==========================================
@@ -96,22 +96,34 @@ async def test_get_all_conversations_invalid_query_params(client):
 # ==========================================
 
 @pytest.mark.asyncio
-async def test_integration_get_messages_success(client):
-    conv_payload = {"user_id": "test_user", "title": "Test Chat"}
-    conv_res = await client.post("/conversations", json=conv_payload)
-    conv_id = conv_res.json()["id"]
-
-    msg_payload = {"question": "Tin nhắn test"}
-    await client.post(f"/conversations/{conv_id}/messages", json=msg_payload)
+async def test_integration_get_messages_success(client, db_session):
+    conv_id = str(uuid.uuid4())
+    
+    new_conv = Conversation(
+        id=conv_id, 
+        user_id="test_user", 
+        title="Test Chat"
+    )
+    db_session.add(new_conv)
+    
+    new_msg = Message(
+        id=str(uuid.uuid4()),
+        conversation_id=conv_id,
+        role="user",
+        content="Tin nhắn chèn thẳng vào DB"
+    )
+    db_session.add(new_msg)
+    
+    await db_session.commit() 
 
     response = await client.get(f"/conversations/{conv_id}/messages")
-
+    
     assert response.status_code == 200
     data = response.json()
-    print(data)
-    assert len(data) >= 1
-    assert data[0]["conversation_id"] == conv_id
-    assert data[0]["content"] == "Tin nhắn test"
+    
+    assert len(data) == 1
+    assert data[0]["content"] == "Tin nhắn chèn thẳng vào DB"
+    assert data[0]["role"] == "user"
 
 @pytest.mark.asyncio
 async def test_integration_get_messages_empty(client):

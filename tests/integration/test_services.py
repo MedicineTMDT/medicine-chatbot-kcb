@@ -23,9 +23,6 @@ async def test_integration_stream_rag_fallback_with_fixture(chat_handler, db_ses
     async for event in handler.stream_generator():
         events.append(event)
 
-    import pprint
-    pprint.pprint(events)
-
     assert len(events) == 4
     assert "start" in events[0]
     assert "Paracetamol " in events[1]

@@ -18,13 +18,12 @@ async def test_integration_search_drug_not_found():
 
 @pytest.mark.asyncio
 async def test_integration_check_interactions_success():
-    ingredients = ["Aspirin", "Ibuprofen"]
+    ingredients = ["Darunavir-ritonavir", "Felodipine"]
     result = await check_drug_interactions(ingredients)
     
     assert isinstance(result, list)
     assert len(result) > 0
-    assert "severity" in result[0]
-    assert "description" in result[0]
+    assert "coCheTuongTac" in result[0]
 
 @pytest.mark.asyncio
 async def test_integration_check_interactions_empty_safe():

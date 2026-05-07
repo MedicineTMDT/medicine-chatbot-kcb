@@ -3,15 +3,15 @@ import respx
 import httpx
 from src.tools import search_drug, check_drug_interactions
 
-SPRING_MOCK_URL = "http://localhost:8080"
-INTERACTION_PATH = "/api/v1/drug-interactions/search-by-ingredients"
+SPRING_MOCK_URL = "http://localhost:8888"
+INTERACTION_PATH = "/api/v1/medicine/drug-interactions/search-by-ingredients"
 
 @pytest.mark.asyncio
 @respx.mock
 async def test_search_drug_success():
     """Kịch bản: Tìm thấy thuốc và lấy chi tiết thành công"""
     
-    respx.get(f"{SPRING_MOCK_URL}/api/v1/drugs/search?name=Paracetamol").respond(
+    respx.get(f"{SPRING_MOCK_URL}/api/v1/medicine/drugs/search?name=Paracetamol").respond(
         status_code=200,
         json={
             "result": {
@@ -20,7 +20,7 @@ async def test_search_drug_success():
         }
     )
 
-    respx.get(f"{SPRING_MOCK_URL}/api/v1/drugs/drug-123").respond(
+    respx.get(f"{SPRING_MOCK_URL}/api/v1/medicine/drugs/drug-123").respond(
         status_code=200,
         json={
             "result": {
@@ -43,7 +43,7 @@ async def test_search_drug_success():
 async def test_search_drug_not_found():
     """Kịch bản: API Spring Boot trả về danh sách rỗng"""
     
-    respx.get(f"{SPRING_MOCK_URL}/api/v1/drugs/search?name=ThuocLa").respond(
+    respx.get(f"{SPRING_MOCK_URL}/api/v1/medicine/drugs/search?name=ThuocLa").respond(
         status_code=200,
         json={"result": {"content": []}}
     )
@@ -59,7 +59,7 @@ async def test_search_drug_not_found():
 async def test_search_drug_network_timeout():
     """Kịch bản: Spring Boot API bị treo, httpx văng lỗi Timeout"""
     
-    respx.get(f"{SPRING_MOCK_URL}/api/v1/drugs/search?name=Hapacol").mock(
+    respx.get(f"{SPRING_MOCK_URL}/api/v1/medicine/drugs/search?name=Hapacol").mock(
         side_effect=httpx.TimeoutException("Read timeout")
     )
 

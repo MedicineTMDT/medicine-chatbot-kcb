@@ -13,8 +13,6 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-latest
 
-    env:
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

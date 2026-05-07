@@ -1,6 +1,6 @@
 import pytest
 import uuid
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from src.services import ChatStreamHandler
 
 import pytest_asyncio
@@ -32,7 +32,12 @@ def conversation_id():
     return uuid.uuid4()
 
 @pytest.fixture
-def chat_handler(mock_db, conversation_id):
+@patch("src.services.get_llm")
+@patch("src.services.get_rag_chain")
+def chat_handler(mock_rag_chain, mock_get_llm, mock_db, conversation_id):
+    mock_rag_chain.return_value = MagicMock()
+    mock_get_llm.return_value = MagicMock()
+
     handler = ChatStreamHandler(
         db=mock_db, 
         conversation_id=conversation_id, 

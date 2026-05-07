@@ -11,7 +11,7 @@ from src.llms import get_llm
 from src.utils import format_history_to_string, format_sse
 from db.postgre import crud
 
-BASE_URL_FILE = os.getenv("BASE_URL_FILE")
+BASE_URL_FILE = os.getenv("BASE_URL_FILE", "")
 
 class ChatStreamHandler:
     def __init__(self, db: AsyncSession, conversation_id: uuid.UUID, question: str):

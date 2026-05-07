@@ -13,10 +13,6 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-latest
 
-    env:
-      POSTGRES_DATABASE_URL: test
-      BASE_URL_FILE: test
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

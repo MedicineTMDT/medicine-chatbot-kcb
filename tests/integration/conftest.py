@@ -7,7 +7,7 @@ from testcontainers.postgres import PostgresContainer
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
 from api.main import app 
-from db import get_db
+from db.postgre.db_store import get_db
 from db.postgre.models import Base, Conversation
 from src.services import ChatStreamHandler
 

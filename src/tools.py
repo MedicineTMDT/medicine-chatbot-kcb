@@ -2,7 +2,7 @@ import os
 import httpx
 from typing import List, Dict, Any
 
-SPRING_API_BASE_URL = os.getenv("SPRING_API_BASE_URL", "http://localhost:8080")
+SPRING_API_BASE_URL = os.getenv("SPRING_API_BASE_URL", "http://localhost:8888")
 TIMEOUT = 10.0
 
 async def search_drug(name: str) -> Dict[str, Any]:
@@ -13,7 +13,7 @@ async def search_drug(name: str) -> Dict[str, Any]:
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
             # 1. Search for the drug
-            search_url = f"{SPRING_API_BASE_URL}/api/v1/drugs/search"
+            search_url = f"{SPRING_API_BASE_URL}/api/v1/medicine/drugs/search"
             search_response = await client.get(search_url, params={"name": name})
             search_response.raise_for_status()
             search_data = search_response.json()
@@ -25,7 +25,7 @@ async def search_drug(name: str) -> Dict[str, Any]:
 
             # 2. Get full details for the first result
             drug_id = results[0].get("id")
-            detail_url = f"{SPRING_API_BASE_URL}/api/v1/drugs/{drug_id}"
+            detail_url = f"{SPRING_API_BASE_URL}/api/v1/medicine/drugs/{drug_id}"
             detail_response = await client.get(detail_url)
             detail_response.raise_for_status()
             detail_data = detail_response.json()
@@ -43,7 +43,7 @@ async def check_drug_interactions(ingredient_names: List[str]) -> Any:
     """
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            interaction_url = f"{SPRING_API_BASE_URL}/api/v1/drug-interactions/search-by-ingredients"
+            interaction_url = f"{SPRING_API_BASE_URL}/api/v1/medicine/drug-interactions/search-by-ingredients"
             # ingredientNames in Spring Boot is mapped from multiple query params with same name
             response = await client.get(interaction_url, params={"ingredientNames": ingredient_names})
             response.raise_for_status()

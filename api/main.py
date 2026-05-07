@@ -4,7 +4,7 @@ load_dotenv()
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routes import chat, conversations, title
+from api.routes import chat, conversations, title, completion
 from db.postgre.db_store import init_db
 
 @asynccontextmanager
@@ -34,6 +34,7 @@ app.add_middleware(
 app.include_router(chat.router)
 app.include_router(conversations.router)
 app.include_router(title.router)
+app.include_router(completion.router)
 
 @app.get("/")
 def health_check():

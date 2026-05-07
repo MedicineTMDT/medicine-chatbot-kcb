@@ -2,15 +2,20 @@ import os
 from langchain_pinecone import PineconeVectorStore
 from src.embeddings import get_embedding_model
 
-def get_vector_store():
-    index_name = os.getenv("PINECONE_INDEX_NAME")
-    if not index_name:
-        raise ValueError("Thiếu PINECONE_INDEX_NAME trong file .env")
+_vector_store_instance = None
 
-    vector_store = PineconeVectorStore(
-        index_name=index_name,
-        namespace="default",
-        embedding=get_embedding_model()
-    )
-    
-    return vector_store
+def get_vector_store():
+    global _vector_store_instance
+    if _vector_store_instance is None:
+        if "PINECONE_API_KEY" not in os.environ:
+            os.environ["PINECONE_API_KEY"] = "dummy-pinecone-key"
+
+        index_name = os.getenv("PINECONE_INDEX_NAME", "dummy-index")
+
+        _vector_store_instance = PineconeVectorStore(
+            index_name=index_name,
+            namespace="default",
+            embedding=get_embedding_model()
+        )
+        
+    return _vector_store_instance

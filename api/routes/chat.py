@@ -3,9 +3,9 @@ import uuid
 from fastapi import APIRouter, HTTPException, Depends 
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from api.schemas import ChatRequest
+from api.schemas.chat import ChatRequest
 from src.services import ChatStreamHandler
-from db import get_db
+from db.postgre.db_store import get_db
 
 router = APIRouter(
     prefix="/conversations",

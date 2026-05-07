@@ -3,13 +3,13 @@ import uuid
 import os
 from sqlalchemy.ext.asyncio import AsyncSession
 from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage
-from api.schemas import DocumentMetadata
+from api.schemas.chat import DocumentMetadata
 from src.chains import get_rag_chain, get_condense_chain 
 from src.tools import get_medicine_tools_definition, AVAILABLE_TOOLS
 from src.prompts import build_tool_agent_prompt
 from src.llms import get_llm
 from src.utils import format_history_to_string, format_sse
-from db import crud
+from db.postgre import crud
 
 BASE_URL_FILE = os.getenv("BASE_URL_FILE")
 

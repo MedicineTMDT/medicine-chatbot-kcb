@@ -1,4 +1,4 @@
-from api.schemas import ChatResponse
+from api.schemas.chat import ChatResponse
 
 def format_docs(docs):
     formatted_docs = []

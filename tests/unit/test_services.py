@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, patch, MagicMock
 from langchain_core.messages import AIMessage
 
 @pytest.mark.asyncio
-@patch("db.crud.save_message", new_callable=AsyncMock)
-@patch("db.crud.get_chat_history", new_callable=AsyncMock)
+@patch("db.postgre.crud.save_message", new_callable=AsyncMock)
+@patch("db.postgre.crud.get_chat_history", new_callable=AsyncMock)
 async def test_stream_generator_rag_fallback(mock_get_history, mock_save_msg, chat_handler):
     mock_get_history.return_value = []
     
@@ -38,8 +38,8 @@ async def test_stream_generator_rag_fallback(mock_get_history, mock_save_msg, ch
 # ==========================================
 
 @pytest.mark.asyncio
-@patch("db.crud.save_message", new_callable=AsyncMock)
-@patch("db.crud.get_chat_history", new_callable=AsyncMock)
+@patch("db.postgre.crud.save_message", new_callable=AsyncMock)
+@patch("db.postgre.crud.get_chat_history", new_callable=AsyncMock)
 async def test_stream_generator_with_tool_calls(mock_get_history, mock_save_msg, chat_handler):
     mock_get_history.return_value = []
     

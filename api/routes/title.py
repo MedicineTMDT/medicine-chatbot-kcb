@@ -1,9 +1,10 @@
 import uuid
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from api.schemas import TitleRequest
+from api.schemas.title import TitleRequest
 from src.llms import get_llm
-from db import get_db, crud
+from db.postgre.db_store import get_db
+from db.postgre import crud
 from src.prompts import build_title_prompt
 
 router = APIRouter(

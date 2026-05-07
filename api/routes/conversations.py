@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 import uuid
-from db import get_db, crud
-from api.schemas import ConversationResponse, ConversationCreate, ConversationUpdate, MessageResponse
+from db.postgre.db_store import get_db
+from db.postgre import crud
+from api.schemas.conversations import ConversationResponse, ConversationCreate, ConversationUpdate, MessageResponse
 
 router = APIRouter(
     prefix="/conversations",

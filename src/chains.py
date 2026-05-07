@@ -5,7 +5,7 @@ from src.llms import get_llm
 from functools import lru_cache
 from src.prompts import build_rag_prompt, build_condense_prompt
 from src.utils import format_docs, format_history_to_string
-from db import get_vector_store
+from db.vector_store import get_vector_store
 from api.schemas.completion import CompletionResponse
 from langchain_core.output_parsers import StrOutputParser
 

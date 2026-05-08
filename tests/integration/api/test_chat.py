@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from langchain_core.messages import AIMessage
 from langchain_core.documents import Document
 
-from db import crud
+from db.postgre import crud
 from db.postgre.models import Conversation
 
 

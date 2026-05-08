@@ -6,9 +6,10 @@ load_dotenv()
 
 from ragas import experiment, Dataset
 from ragas.llms import llm_factory
-from ragas.embeddings.base import embedding_factory
+from ragas.embeddings import OpenAIEmbeddings
 from ragas.metrics.collections import (
     Faithfulness,
+    AnswerRelevancy,
     ContextPrecision,
     ContextRecall,
 )
@@ -22,11 +23,15 @@ client = AsyncOpenAI(
 
 llm = llm_factory("gpt-4o-mini", client=client, max_tokens=4096)
 
+emb = OpenAIEmbeddings(client=llm, model="text-embedding-3-small")
+
+
 faithfulness = Faithfulness(llm=llm)
+answer_relevancy = AnswerRelevancy(llm=llm, embeddings=emb)
 context_precision = ContextPrecision(llm=llm)
 context_recall = ContextRecall(llm=llm)
 
-RATE_LIMIT_SEMAPHORE = asyncio.Semaphore(4)
+RATE_LIMIT_SEMAPHORE = asyncio.Semaphore(1)
 
 @experiment()
 async def evaluate_core_rag(row):

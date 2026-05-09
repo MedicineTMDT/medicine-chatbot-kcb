@@ -400,9 +400,6 @@ NHIỆM VỤ CỦA BẠN
 4. KIẾN THỨC BỔ SUNG:
    - Các sự thật thú vị hoặc thông tin y khoa quan trọng liên quan đến loại bệnh hoặc loại thuốc trong đơn.
 
-5. ĐÁNH GIÁ NGỮ CẢNH:
-   - Đánh giá mức độ liên quan của <CONTEXT> đối với <PRESCRIPTION_DATA>. Nếu thông tin trong <CONTEXT> hoàn toàn không liên quan đến câu hỏi hoặc đơn thuốc, bạn bắt buộc phải thiết lập biến `is_useful` = false trong kết quả đầu ra.
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 NGUYÊN TẮC TRẢ LỜI
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -410,7 +407,7 @@ NGUYÊN TẮC TRẢ LỜI
 - Các thông tin cực kỳ quan trọng hoặc liều lượng phải được **in đậm**.
 - Cấu trúc bài phân tích mạch lạc, sử dụng các tiêu đề rõ ràng.
 - Luôn kết thúc bằng tuyên bố miễn trừ trách nhiệm y tế.
-- Nếu <CONTEXT> không liên quan, hãy đảm bảo dòng `is_useful: false` (hoặc định dạng biến tương ứng theo hệ thống của bạn) được xuất ra rõ ràng trong câu trả lời.
+- Đánh giá mức độ liên quan của <CONTEXT> đối với <PRESCRIPTION_DATA>. Nếu thông tin trong <CONTEXT> hoàn toàn không liên quan đến câu hỏi hoặc đơn thuốc, bạn bắt buộc phải thiết lập biến `is_useful` = false trong kết quả đầu ra.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 DỮ LIỆU

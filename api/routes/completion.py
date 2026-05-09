@@ -19,7 +19,7 @@ async def generate_stateless_completion(request: CompletionRequest):
         
         return CompletionResponse(
             answer=result["answer"],
-            is_useful=True
+            is_useful=result["is_useful"]
         )
         
     except Exception as e:

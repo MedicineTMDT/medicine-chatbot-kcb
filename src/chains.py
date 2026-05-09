@@ -72,22 +72,18 @@ def get_rag_chain():
 
 @lru_cache(maxsize=1)
 def get_prescription_analysis_chain():
-    """
-    Chain for analyzing a prescription.
-    Uses RAG to find drug info and a comprehensive prompt for safety/usage analysis.
-    """
     llm = get_llm(temperature=0.1)
     
+    structured_llm = llm.with_structured_output(CompletionResponse)
+    
     vector_store = get_vector_store()
-    # Higher K to get more context for multiple drugs in a prescription
     retriever = vector_store.as_retriever(search_kwargs={"k": 8})
 
     prompt = PromptTemplate.from_template(build_prescription_analysis_prompt())
     
     answer_chain = (
         prompt 
-        | llm 
-        | StrOutputParser()
+        | structured_llm 
     )
 
     analysis_chain = (
@@ -98,12 +94,16 @@ def get_prescription_analysis_chain():
             }
         )
         | RunnablePassthrough.assign(
-            answer=(
+            structured_output=(
                 RunnablePassthrough.assign(
                     context=lambda x: format_docs(x["context"]) 
                 )
                 | answer_chain
             )
+        )
+        | RunnablePassthrough.assign(
+            answer=lambda x: x["structured_output"].answer,
+            is_useful=lambda x: x["structured_output"].is_useful
         )
     )
     

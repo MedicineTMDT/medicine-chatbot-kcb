@@ -2,7 +2,7 @@ import pytest
 from langchain_core.messages import AIMessage
 from langchain_core.documents import Document
 from unittest.mock import AsyncMock, MagicMock, patch
-from db import crud
+from db.postgre import crud
 
 @pytest.mark.asyncio
 async def test_integration_stream_rag_fallback_with_fixture(chat_handler, db_session):

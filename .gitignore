@@ -13,3 +13,6 @@ wheels/
 
 # Files
 files/*.pdf
+
+evaluate/experiments/*
+evaluate/datasets/*

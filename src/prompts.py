@@ -367,7 +367,6 @@ CHỈ trả về đúng tiêu đề được tạo ra. Không giải thích, kh�
 </QUESTION>
 """
 
-
 def build_prescription_analysis_prompt() -> str:
     """
     Comprehensive prescription analysis prompt.
@@ -376,6 +375,7 @@ def build_prescription_analysis_prompt() -> str:
     2. Check for interactions and warnings.
     3. Provide wise usage advice (timing, food, etc.).
     4. Add medical facts/context.
+    5. Evaluate context relevance (set is_useful = false if irrelevant).
     """
     return """Bạn là một chuyên gia y tế cao cấp, có nhiệm vụ phân tích toàn diện một đơn thuốc để đảm bảo an toàn và hiệu quả cho người bệnh.
 
@@ -400,6 +400,9 @@ NHIỆM VỤ CỦA BẠN
 4. KIẾN THỨC BỔ SUNG:
    - Các sự thật thú vị hoặc thông tin y khoa quan trọng liên quan đến loại bệnh hoặc loại thuốc trong đơn.
 
+5. ĐÁNH GIÁ NGỮ CẢNH:
+   - Đánh giá mức độ liên quan của <CONTEXT> đối với <PRESCRIPTION_DATA>. Nếu thông tin trong <CONTEXT> hoàn toàn không liên quan đến câu hỏi hoặc đơn thuốc, bạn bắt buộc phải thiết lập biến `is_useful` = false trong kết quả đầu ra.
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 NGUYÊN TẮC TRẢ LỜI
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -407,6 +410,7 @@ NGUYÊN TẮC TRẢ LỜI
 - Các thông tin cực kỳ quan trọng hoặc liều lượng phải được **in đậm**.
 - Cấu trúc bài phân tích mạch lạc, sử dụng các tiêu đề rõ ràng.
 - Luôn kết thúc bằng tuyên bố miễn trừ trách nhiệm y tế.
+- Nếu <CONTEXT> không liên quan, hãy đảm bảo dòng `is_useful: false` (hoặc định dạng biến tương ứng theo hệ thống của bạn) được xuất ra rõ ràng trong câu trả lời.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 DỮ LIỆU
@@ -420,6 +424,3 @@ DỮ LIỆU
 </PRESCRIPTION_DATA>
 
 Hãy phân tích đơn thuốc trên một cách chi tiết và khoa học:"""
-
-
-

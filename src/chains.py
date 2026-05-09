@@ -3,7 +3,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough, RunnableParallel
 from src.llms import get_llm
 from functools import lru_cache
-from src.prompts import build_rag_prompt, build_condense_prompt
+from src.prompts import build_rag_prompt, build_condense_prompt, build_prescription_analysis_prompt
 from src.utils import format_docs, format_history_to_string
 from db.vector_store import get_vector_store
 from api.schemas.completion import CompletionResponse
@@ -71,31 +71,30 @@ def get_rag_chain():
     return rag_chain
 
 @lru_cache(maxsize=1)
-def get_stateless_rag_chain():
+def get_prescription_analysis_chain():
+    """
+    Chain for analyzing a prescription.
+    Uses RAG to find drug info and a comprehensive prompt for safety/usage analysis.
+    """
     llm = get_llm(temperature=0.1)
     
-    structured_llm = llm.with_structured_output(CompletionResponse)
-        
     vector_store = get_vector_store()
-    retriever = vector_store.as_retriever(search_kwargs={"k": 5, "score_threshold": 0.8})
+    # Higher K to get more context for multiple drugs in a prescription
+    retriever = vector_store.as_retriever(search_kwargs={"k": 8})
 
-    RAG_PROMPT_TEMPLATE = build_rag_prompt()
-    prompt = PromptTemplate.from_template(RAG_PROMPT_TEMPLATE)
+    prompt = PromptTemplate.from_template(build_prescription_analysis_prompt())
     
     answer_chain = (
         prompt 
-        | structured_llm 
+        | llm 
+        | StrOutputParser()
     )
 
-    rag_chain = (
-        RunnablePassthrough.assign(
-            chat_history=lambda x: "" 
-        )
-        | RunnableParallel(
+    analysis_chain = (
+        RunnableParallel(
             {
                 "context": itemgetter("question") | retriever, 
-                "question": itemgetter("question"),
-                "chat_history": itemgetter("chat_history") 
+                "question": itemgetter("question")
             }
         )
         | RunnablePassthrough.assign(
@@ -108,4 +107,4 @@ def get_stateless_rag_chain():
         )
     )
     
-    return rag_chain
+    return analysis_chain

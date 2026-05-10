@@ -39,6 +39,7 @@ class ChatStreamHandler:
     async def _handle_tools_execution(self, messages: list, llm_with_tools):
         """Xử lý vòng lặp Tool Calls. Yield trực tiếp các SSE event."""
         ai_msg = await llm_with_tools.ainvoke(messages)
+        self.tool_failed = False
 
         while ai_msg.tool_calls:
             self.tool_was_called = True
@@ -51,8 +52,19 @@ class ChatStreamHandler:
                 yield format_sse("tool_start", answer=f"Đang tra cứu chuyên sâu về {tool_name}...")
                 
                 tool_func = AVAILABLE_TOOLS.get(tool_name)
-                result = await tool_func(**tool_args) if tool_func else {"error": f"Tool {tool_name} not found"}
                 
+                try:
+                    if tool_func:
+                        result = await tool_func(**tool_args)
+                    else:
+                        result = {"error": f"Tool {tool_name} not found"}
+                except Exception as e:
+                    result = {"error": f"Exception occurred: {str(e)}"}
+                
+                if isinstance(result, dict) and "error" in result:
+                    self.tool_failed = True
+                    return
+
                 self.tool_calls_executed.append({
                     "name": tool_name,
                     "args": tool_args,
@@ -66,7 +78,7 @@ class ChatStreamHandler:
             
             ai_msg = await llm_with_tools.ainvoke(messages)
 
-        if self.tool_was_called:
+        if self.tool_was_called and not self.tool_failed:
             async for chunk in self.llm.astream(messages):
                 token = chunk.content
                 self.full_answer += token
@@ -117,7 +129,7 @@ class ChatStreamHandler:
             async for event in self._handle_tools_execution(messages, llm_with_tools):
                 yield event
 
-            if not self.tool_was_called:
+            if not self.tool_was_called or getattr(self, 'tool_failed', False):
                 async for event in self._handle_rag_fallback(standalone_question):
                     yield event
 

@@ -6,7 +6,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage
 from api.schemas.chat import DocumentMetadata
 from src.chains import get_rag_chain, get_condense_chain 
 from src.tools import get_medicine_tools_definition, AVAILABLE_TOOLS
-from src.prompts import build_tool_agent_prompt
+from src.prompts import build_tool_agent_prompt, build_guard_prompt
 from src.llms import get_llm
 from src.utils import format_history_to_string, format_sse
 from db.postgre import crud
@@ -25,9 +25,23 @@ class ChatStreamHandler:
         self.tool_calls_executed = []
         
         self.llm = get_llm(temperature=0.0)
+        self.small_llm = get_llm(temperature=0.0, is_chat_model=False)
         self.rag_chain = get_rag_chain()
         self.condense_chain = get_condense_chain()
         self.tools = get_medicine_tools_definition()
+
+
+    async def _check_medical_relevance(self, question: str) -> bool:
+        system_prompt = build_guard_prompt()
+
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=f"Câu hỏi: {question}")
+        ]
+        
+        response = await self.small_llm.ainvoke(messages)
+        
+        return "YES" in response.content
 
     async def _condense_question(self, chat_history: list) -> str:
         """Rút gọn câu hỏi dựa trên ngữ cảnh."""
@@ -112,6 +126,24 @@ class ChatStreamHandler:
         """Hàm chính điều phối toàn bộ luồng."""
         try:
             yield format_sse("start", conversation_id=self.conversation_id)
+
+            is_medical_related = await self._check_medical_relevance(self.question)
+            if not is_medical_related:
+                error_message = "Xin lỗi, tôi là trợ lý y tế và chỉ có thể giải đáp các câu hỏi liên quan đến lĩnh vực y tế."
+                
+                yield format_sse("error", answer=error_message)
+                
+                await crud.save_message(db=self.db, conversation_id=self.conversation_id, role="user", content=self.question)
+                await crud.save_message(
+                    db=self.db, 
+                    conversation_id=self.conversation_id, 
+                    role="assistant", 
+                    content=error_message,
+                    sources=[],
+                    tool_calls=None
+                )
+                
+                return
 
             raw_history = await crud.get_chat_history(db=self.db, conversation_id=self.conversation_id, limit=6)
             chat_history = [("human" if msg.role == "user" else "ai", msg.content) for msg in raw_history]

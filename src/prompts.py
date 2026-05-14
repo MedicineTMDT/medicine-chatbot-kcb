@@ -5,6 +5,15 @@
 # ============================================================
 
 
+def build_guard_prompt() -> str:
+    return """Bạn là một bộ lọc kiểm duyệt nội dung. Nhiệm vụ của bạn là phân loại xem câu hỏi của người dùng có thuộc lĩnh vực y tế, sức khỏe, y khoa, dược phẩm hoặc sinh học con người hay không.
+
+Chỉ trả lời "YES" nếu câu hỏi liên quan đến y tế/sức khỏe.
+Chỉ trả lời "NO" nếu câu hỏi không liên quan (ví dụ: lập trình, toán học, đời sống chung chung, v.v.).
+
+Tuyệt đối chỉ in ra "YES" hoặc "NO", không giải thích thêm bất kỳ từ nào."""
+
+
 def build_condense_prompt() -> str:
     """
     Condense multi-turn chat history + new question into a single

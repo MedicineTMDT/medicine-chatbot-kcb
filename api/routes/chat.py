@@ -22,6 +22,14 @@ async def ask_question_stream(conversation_id: uuid.UUID, request: ChatRequest, 
             conversation_id=conversation_id, 
             question=request.question
         )
-        return StreamingResponse(handler.stream_generator(), media_type="text/event-stream")
+        return StreamingResponse(
+            handler.stream_generator(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache, no-transform",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

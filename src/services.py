@@ -6,7 +6,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage
 from api.schemas.chat import DocumentMetadata
 from src.chains import get_rag_chain, get_condense_chain 
 from src.tools import get_medicine_tools_definition, AVAILABLE_TOOLS
-from src.prompts import build_tool_agent_prompt
+from src.prompts import build_tool_agent_prompt, build_guard_prompt
 from src.llms import get_llm
 from src.utils import format_history_to_string, format_sse
 from db.postgre import crud
@@ -25,9 +25,23 @@ class ChatStreamHandler:
         self.tool_calls_executed = []
         
         self.llm = get_llm(temperature=0.0)
+        self.small_llm = get_llm(temperature=0.0, is_chat_model=False)
         self.rag_chain = get_rag_chain()
         self.condense_chain = get_condense_chain()
         self.tools = get_medicine_tools_definition()
+
+
+    async def _check_medical_relevance(self, question: str) -> bool:
+        system_prompt = build_guard_prompt()
+
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=f"Câu hỏi: {question}")
+        ]
+        
+        response = await self.small_llm.ainvoke(messages)
+        
+        return "YES" in response.content
 
     async def _condense_question(self, chat_history: list) -> str:
         """Rút gọn câu hỏi dựa trên ngữ cảnh."""
@@ -39,6 +53,7 @@ class ChatStreamHandler:
     async def _handle_tools_execution(self, messages: list, llm_with_tools):
         """Xử lý vòng lặp Tool Calls. Yield trực tiếp các SSE event."""
         ai_msg = await llm_with_tools.ainvoke(messages)
+        self.tool_failed = False
 
         while ai_msg.tool_calls:
             self.tool_was_called = True
@@ -51,8 +66,19 @@ class ChatStreamHandler:
                 yield format_sse("tool_start", answer=f"Đang tra cứu chuyên sâu về {tool_name}...")
                 
                 tool_func = AVAILABLE_TOOLS.get(tool_name)
-                result = await tool_func(**tool_args) if tool_func else {"error": f"Tool {tool_name} not found"}
                 
+                try:
+                    if tool_func:
+                        result = await tool_func(**tool_args)
+                    else:
+                        result = {"error": f"Tool {tool_name} not found"}
+                except Exception as e:
+                    result = {"error": f"Exception occurred: {str(e)}"}
+                
+                if isinstance(result, dict) and "error" in result:
+                    self.tool_failed = True
+                    return
+
                 self.tool_calls_executed.append({
                     "name": tool_name,
                     "args": tool_args,
@@ -66,7 +92,7 @@ class ChatStreamHandler:
             
             ai_msg = await llm_with_tools.ainvoke(messages)
 
-        if self.tool_was_called:
+        if self.tool_was_called and not self.tool_failed:
             async for chunk in self.llm.astream(messages):
                 token = chunk.content
                 self.full_answer += token
@@ -101,6 +127,24 @@ class ChatStreamHandler:
         try:
             yield format_sse("start", conversation_id=self.conversation_id)
 
+            is_medical_related = await self._check_medical_relevance(self.question)
+            if not is_medical_related:
+                error_message = "Xin lỗi, tôi là trợ lý y tế và chỉ có thể giải đáp các câu hỏi liên quan đến lĩnh vực y tế."
+                
+                yield format_sse("error", answer=error_message)
+                
+                await crud.save_message(db=self.db, conversation_id=self.conversation_id, role="user", content=self.question)
+                await crud.save_message(
+                    db=self.db, 
+                    conversation_id=self.conversation_id, 
+                    role="assistant", 
+                    content=error_message,
+                    sources=[],
+                    tool_calls=None
+                )
+                
+                return
+
             raw_history = await crud.get_chat_history(db=self.db, conversation_id=self.conversation_id, limit=6)
             chat_history = [("human" if msg.role == "user" else "ai", msg.content) for msg in raw_history]
             await crud.save_message(db=self.db, conversation_id=self.conversation_id, role="user", content=self.question)
@@ -117,7 +161,7 @@ class ChatStreamHandler:
             async for event in self._handle_tools_execution(messages, llm_with_tools):
                 yield event
 
-            if not self.tool_was_called:
+            if not self.tool_was_called or getattr(self, 'tool_failed', False):
                 async for event in self._handle_rag_fallback(standalone_question):
                     yield event
 

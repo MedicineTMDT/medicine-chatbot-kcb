@@ -16,3 +16,5 @@ files/*.pdf
 
 evaluate/experiments/*
 evaluate/datasets/*
+
+output/
